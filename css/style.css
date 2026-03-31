@@ -931,8 +931,16 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   flex-direction: column;
 }
 
-.support-card .btn {
+.support-card-actions {
   margin-top: auto;
+  display: grid;
+  gap: 12px;
+}
+
+.support-store-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .support-card:hover {
