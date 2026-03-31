@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Stompai Web Admin</title>
+  <link rel="icon" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <section class="support-hero">
+    <div class="container">
+      <p class="section-label">Hidden Admin</p>
+      <h1>Early Access<br><span class="highlight">Signups</span></h1>
+      <p class="section-subtitle" style="margin: 16px auto 0;">Review Studio signups, update outreach progress, and export the list as CSV.</p>
+      <div class="admin-auth-card">
+        <p class="admin-status" data-auth-status>Checking sign-in...</p>
+        <div class="cta-buttons">
+          <button type="button" class="btn btn-primary" data-sign-in>Sign In with Google</button>
+          <button type="button" class="btn btn-outline" data-sign-out hidden>Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="products-section" style="padding-top: 0;" data-admin-panel hidden>
+    <div class="container">
+      <div class="admin-toolbar">
+        <p class="admin-status" data-admin-status>Loading signups...</p>
+        <div class="cta-buttons">
+          <button type="button" class="btn btn-outline" data-refresh>Refresh</button>
+          <button type="button" class="btn btn-amazon" data-export-csv>Export CSV</button>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Page</th>
+              <th>Created</th>
+              <th>Source</th>
+              <th>Outreached</th>
+              <th>Partner</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody data-admin-body>
+            <tr>
+              <td colspan="7" class="admin-empty">Loading signups...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script type="module" src="js/firebase-admin.js"></script>
+</body>
+</html>

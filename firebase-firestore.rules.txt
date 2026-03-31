@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email in [
+          "stomaiads@gmail.com"
+        ];
+    }
+
+    match /earlyAccessSignups/{document} {
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'email',
+          'page',
+          'createdAt',
+          'source',
+          'userAgent',
+          'outreached',
+          'partner'
+        ]) &&
+        request.resource.data.email is string &&
+        request.resource.data.email.size() > 4 &&
+        request.resource.data.email.size() < 200 &&
+        request.resource.data.page == 'studio' &&
+        request.resource.data.source is string &&
+        request.resource.data.userAgent is string &&
+        request.resource.data.outreached == false &&
+        request.resource.data.partner == 0;
+
+      allow read: if isAdmin();
+
+      allow update: if
+        isAdmin() &&
+        request.resource.data.keys().hasOnly([
+          'email',
+          'page',
+          'createdAt',
+          'source',
+          'userAgent',
+          'outreached',
+          'partner'
+        ]) &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.page == resource.data.page &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.source == resource.data.source &&
+        request.resource.data.userAgent == resource.data.userAgent &&
+        request.resource.data.outreached is bool &&
+        request.resource.data.partner is number &&
+        request.resource.data.partner >= 0 &&
+        request.resource.data.partner <= 100;
+
+      allow delete: if false;
+    }
+  }
+}
