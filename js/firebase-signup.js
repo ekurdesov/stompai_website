@@ -6,12 +6,12 @@ import {
 import { db } from "./firebase-client.js";
 
 const modal = document.querySelector("[data-signup-modal]");
-const trigger = document.querySelector("[data-early-access-trigger]");
+const triggers = document.querySelectorAll("[data-early-access-trigger]");
 const form = document.querySelector("[data-signup-form]");
 const status = document.querySelector("[data-signup-status]");
 const emailInput = document.querySelector("#signup-email");
 
-if (modal && trigger && form && status && emailInput) {
+if (modal && triggers.length > 0 && form && status && emailInput) {
   const closeTargets = modal.querySelectorAll("[data-signup-close]");
   const submitButton = form.querySelector('button[type="submit"]');
 
@@ -29,7 +29,7 @@ if (modal && trigger && form && status && emailInput) {
     form.reset();
   }
 
-  trigger.addEventListener("click", openModal);
+  triggers.forEach((trigger) => trigger.addEventListener("click", openModal));
   closeTargets.forEach((node) => node.addEventListener("click", closeModal));
 
   document.addEventListener("keydown", (event) => {
