@@ -26,7 +26,12 @@ const adminPanel = document.querySelector("[data-admin-panel]");
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-const adminEmails = ["stomaiads@gmail.com"];
+const adminEmails = [
+  "stomaiads@gmail.com",
+  "stompaiads@gmail.com",
+  "ekurdesov@gmail.com",
+  "johnmkjohnson@gmail.com",
+];
 let records = [];
 
 function formatTimestamp(value) {
