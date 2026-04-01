@@ -221,7 +221,7 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
 .dropdown-menu a {
   display: block;
   padding: 10px 20px;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
 }
 
 /* Hamburger */
@@ -768,6 +768,14 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   border: 1px solid var(--border);
   background: linear-gradient(180deg, rgba(33, 33, 51, 0.98), rgba(20, 20, 32, 0.98));
   box-shadow: 0 28px 100px rgba(0, 0, 0, 0.5);
+}
+
+.signup-dialog-confirm {
+  text-align: center;
+}
+
+.signup-dialog-confirm .signup-copy {
+  margin-bottom: 24px;
 }
 
 .signup-close {
