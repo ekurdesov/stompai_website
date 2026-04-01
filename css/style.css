@@ -1643,10 +1643,10 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
     height: 110vh;
   }
   .home-hero-video .video-bg iframe {
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -53%);
   }
   .doublekick-hero-video .video-bg iframe {
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -57%);
   }
 
   .countdown-grid {
@@ -1669,10 +1669,10 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
     height: 105vh;
   }
   .home-hero-video .video-bg iframe {
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -55%);
   }
   .doublekick-hero-video .video-bg iframe {
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -60%);
   }
   .hero-buttons { flex-direction: column; align-items: center; }
   .cta-buttons { flex-direction: column; align-items: center; }
