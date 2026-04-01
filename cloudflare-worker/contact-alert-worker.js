@@ -49,9 +49,12 @@ async function sendEmail(env, payload) {
     body: JSON.stringify(payload),
   });
 
+  const responseText = await resendResponse.text();
+  console.log("Resend status", resendResponse.status);
+  console.log("Resend body", responseText);
+
   if (!resendResponse.ok) {
-    const resendError = await resendResponse.text();
-    throw new Error(resendError || "Resend request failed");
+    throw new Error(responseText || "Resend request failed");
   }
 }
 
