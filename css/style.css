@@ -1640,8 +1640,8 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   .hero { padding: 130px 0 60px; }
   .app-hero { padding: 130px 0 60px; }
   .hero-video-bg .video-bg iframe {
-    width: 150vw;
-    height: 110vh;
+    width: 210vw;
+    height: 130vh;
   }
   .home-hero-video .video-bg iframe {
     transform: translate(-50%, -53%);
@@ -1666,8 +1666,8 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
     margin-bottom: 28px;
   }
   .hero-video-bg .video-bg iframe {
-    width: 165vw;
-    height: 105vh;
+    width: 240vw;
+    height: 135vh;
   }
   .home-hero-video .video-bg iframe {
     transform: translate(-50%, -55%);
