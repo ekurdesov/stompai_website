@@ -1,0 +1,6 @@
+name = "stompai-contact-alert"
+main = "contact-alert-worker.js"
+compatibility_date = "2026-03-31"
+
+[observability]
+enabled = true

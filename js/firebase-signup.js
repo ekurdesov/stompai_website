@@ -4,6 +4,7 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { db, logAnalyticsEvent } from "./firebase-client.js";
+import { notifyEmailAlert } from "./email-alert.js";
 
 const modal = document.querySelector("[data-signup-modal]");
 const successModal = document.querySelector("[data-signup-success-modal]");
@@ -15,7 +16,7 @@ const successCloseButton = document.querySelector("[data-signup-success-close]")
 
 if (modal && successModal && triggers.length > 0 && form && status && emailInput && successCloseButton) {
   const closeTargets = modal.querySelectorAll("[data-signup-close]");
-  const submitButton = form.querySelector('button[type="submit"]');
+  const submitButton = form.querySelector("button[type=submit]");
 
   function openModal() {
     modal.hidden = false;
@@ -84,6 +85,20 @@ if (modal && successModal && triggers.length > 0 && form && status && emailInput
         outreached: false,
         partner: 0,
       });
+
+      try {
+        await notifyEmailAlert({
+          type: "early_access",
+          email,
+          page: window.location.pathname,
+        });
+      } catch (error) {
+        console.error("Early access alert email failed", error);
+        logAnalyticsEvent("lead_alert_error", {
+          form_name: "studio_early_access",
+          page: "studio",
+        });
+      }
 
       logAnalyticsEvent("generate_lead", {
         form_name: "studio_early_access",

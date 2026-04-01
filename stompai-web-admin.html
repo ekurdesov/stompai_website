@@ -57,6 +57,34 @@
           </tbody>
         </table>
       </div>
+
+      <div class="admin-toolbar" style="margin-top: 40px;">
+        <p class="admin-status" data-contact-admin-status>Loading contact messages...</p>
+        <div class="cta-buttons">
+          <button type="button" class="btn btn-outline" data-contact-refresh>Refresh Messages</button>
+          <button type="button" class="btn btn-amazon" data-export-contact-csv>Export Messages CSV</button>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Message</th>
+              <th>Page</th>
+              <th>Created</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody data-contact-body>
+            <tr>
+              <td colspan="6" class="admin-empty">Loading contact messages...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 

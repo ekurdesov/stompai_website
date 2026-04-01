@@ -19,6 +19,10 @@ const tbody = document.querySelector("[data-admin-body]");
 const status = document.querySelector("[data-admin-status]");
 const exportButton = document.querySelector("[data-export-csv]");
 const refreshButton = document.querySelector("[data-refresh]");
+const contactTbody = document.querySelector("[data-contact-body]");
+const contactStatus = document.querySelector("[data-contact-admin-status]");
+const contactExportButton = document.querySelector("[data-export-contact-csv]");
+const contactRefreshButton = document.querySelector("[data-contact-refresh]");
 const authStatus = document.querySelector("[data-auth-status]");
 const signInButton = document.querySelector("[data-sign-in]");
 const signOutButton = document.querySelector("[data-sign-out]");
@@ -33,6 +37,7 @@ const adminEmails = [
   "johnmkjohnson@gmail.com",
 ];
 let records = [];
+let contactRecords = [];
 
 function formatTimestamp(value) {
   if (!value?.toDate) return "";
@@ -85,6 +90,34 @@ function renderRows() {
   `).join("");
 }
 
+function renderContactRows() {
+  if (!contactTbody) return;
+
+  if (!contactRecords.length) {
+    contactTbody.innerHTML = '<tr><td colspan="6" class="admin-empty">No contact messages found.</td></tr>';
+    return;
+  }
+
+  contactTbody.innerHTML = contactRecords.map((record) => `
+    <tr data-contact-doc-id="${record.id}">
+      <td>${record.email || ""}</td>
+      <td class="admin-message-cell">${record.message || ""}</td>
+      <td>${record.page || ""}</td>
+      <td>${formatTimestamp(record.createdAt)}</td>
+      <td>
+        <select class="admin-select" data-contact-field="status">
+          <option value="new" ${record.status === "new" ? "selected" : ""}>new</option>
+          <option value="reviewed" ${record.status === "reviewed" ? "selected" : ""}>reviewed</option>
+          <option value="replied" ${record.status === "replied" ? "selected" : ""}>replied</option>
+        </select>
+      </td>
+      <td>
+        <button type="button" class="btn btn-outline admin-save" data-contact-save>Save</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
 async function loadRecords() {
   if (!status) return;
   status.textContent = "Loading signups...";
@@ -99,6 +132,20 @@ async function loadRecords() {
   }
 }
 
+async function loadContactRecords() {
+  if (!contactStatus) return;
+  contactStatus.textContent = "Loading contact messages...";
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "contactMessages"), orderBy("createdAt", "desc")));
+    contactRecords = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+    renderContactRows();
+    contactStatus.textContent = `${contactRecords.length} contact messages loaded.`;
+  } catch (error) {
+    contactStatus.textContent = "Failed to load contact messages. Check Firestore rules.";
+  }
+}
+
 function isAllowedAdmin(user) {
   return !!user?.email && adminEmails.includes(user.email.toLowerCase());
 }
@@ -109,8 +156,11 @@ function setSignedOutState(message) {
   if (signOutButton) signOutButton.hidden = true;
   if (adminPanel) adminPanel.hidden = true;
   records = [];
+  contactRecords = [];
   renderRows();
+  renderContactRows();
   if (status) status.textContent = "Sign in required.";
+  if (contactStatus) contactStatus.textContent = "Sign in required.";
 }
 
 function setSignedInState(user) {
@@ -159,6 +209,37 @@ async function saveRow(row) {
   }
 }
 
+async function saveContactRow(row) {
+  const id = row.dataset.contactDocId;
+  const statusInput = row.querySelector('[data-contact-field="status"]');
+  const saveButton = row.querySelector("[data-contact-save]");
+
+  saveButton.disabled = true;
+  saveButton.textContent = "Saving...";
+
+  try {
+    await updateDoc(doc(db, "contactMessages", id), {
+      status: statusInput.value,
+    });
+
+    const record = contactRecords.find((item) => item.id === id);
+    if (record) {
+      record.status = statusInput.value;
+    }
+
+    contactStatus.textContent = "Contact message updated.";
+    saveButton.textContent = "Saved";
+    window.setTimeout(() => {
+      saveButton.disabled = false;
+      saveButton.textContent = "Save";
+    }, 900);
+  } catch (error) {
+    contactStatus.textContent = "Contact message update failed. Check Firestore rules.";
+    saveButton.disabled = false;
+    saveButton.textContent = "Save";
+  }
+}
+
 function exportCsv() {
   const header = ["email", "page", "createdAt", "source", "userAgent", "outreached", "partner"];
   const rows = records.map((record) => [
@@ -183,7 +264,43 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
-if (tbody && status && exportButton && refreshButton && signInButton && signOutButton && authStatus && adminPanel) {
+function exportContactCsv() {
+  const header = ["email", "message", "page", "createdAt", "userAgent", "status"];
+  const rows = contactRecords.map((record) => [
+    record.email,
+    record.message,
+    record.page,
+    formatTimestamp(record.createdAt),
+    record.userAgent,
+    record.status || "new",
+  ]);
+
+  const csv = [header, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+
+  link.href = url;
+  link.download = `stompai-contact-messages-${date}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+if (
+  tbody &&
+  status &&
+  exportButton &&
+  refreshButton &&
+  contactTbody &&
+  contactStatus &&
+  contactExportButton &&
+  contactRefreshButton &&
+  signInButton &&
+  signOutButton &&
+  authStatus &&
+  adminPanel
+) {
   setSignedOutState("Sign in with your admin Google account to view signups.");
 
   tbody.addEventListener("click", (event) => {
@@ -199,8 +316,16 @@ if (tbody && status && exportButton && refreshButton && signInButton && signOutB
     if (label) label.textContent = checkbox.checked ? "Yes" : "No";
   });
 
+  contactTbody.addEventListener("click", (event) => {
+    const saveButton = event.target.closest("[data-contact-save]");
+    if (!saveButton) return;
+    saveContactRow(saveButton.closest("tr"));
+  });
+
   exportButton.addEventListener("click", exportCsv);
   refreshButton.addEventListener("click", loadRecords);
+  contactExportButton.addEventListener("click", exportContactCsv);
+  contactRefreshButton.addEventListener("click", loadContactRecords);
 
   signInButton.addEventListener("click", async () => {
     authStatus.textContent = "Opening Google sign-in...";
@@ -240,5 +365,6 @@ if (tbody && status && exportButton && refreshButton && signInButton && signOutB
 
     setSignedInState(user);
     loadRecords();
+    loadContactRecords();
   });
 }

@@ -56,5 +56,49 @@ service cloud.firestore {
 
       allow delete: if false;
     }
+
+    match /contactMessages/{document} {
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'email',
+          'message',
+          'page',
+          'createdAt',
+          'userAgent',
+          'status'
+        ]) &&
+        request.resource.data.email is string &&
+        request.resource.data.email.size() > 4 &&
+        request.resource.data.email.size() < 200 &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() > 1 &&
+        request.resource.data.message.size() < 5000 &&
+        request.resource.data.page is string &&
+        request.resource.data.page.size() > 0 &&
+        request.resource.data.page.size() < 200 &&
+        request.resource.data.userAgent is string &&
+        request.resource.data.status == 'new';
+
+      allow read: if isAdmin();
+
+      allow update: if
+        isAdmin() &&
+        request.resource.data.keys().hasOnly([
+          'email',
+          'message',
+          'page',
+          'createdAt',
+          'userAgent',
+          'status'
+        ]) &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.message == resource.data.message &&
+        request.resource.data.page == resource.data.page &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.userAgent == resource.data.userAgent &&
+        request.resource.data.status is string;
+
+      allow delete: if false;
+    }
   }
 }

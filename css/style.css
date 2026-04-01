@@ -778,6 +778,11 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   margin-bottom: 24px;
 }
 
+.contact-textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
 .signup-close {
   position: absolute;
   top: 14px;
@@ -896,6 +901,14 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   word-break: break-word;
 }
 
+.admin-message-cell {
+  max-width: 420px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .admin-checkbox {
   display: inline-flex;
   align-items: center;
@@ -904,6 +917,16 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
 
 .admin-number {
   width: 88px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.admin-select {
+  width: 140px;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
