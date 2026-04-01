@@ -1,4 +1,358 @@
 // Mobile nav toggle
+const analytics = window.stompaiAnalytics;
+const trackedSectionKeys = new Set();
+const trackedVideoSetup = new WeakSet();
+const trackedVideoPlayers = new WeakMap();
+let youtubeApiReady = null;
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+}
+
+function trackEvent(name, params = {}) {
+  analytics?.logEvent(name, {
+    page_path: window.location.pathname,
+    page_name: slugify(document.title),
+    ...params,
+  });
+}
+
+function getTextLabel(element) {
+  if (!element) return "";
+  return element.textContent.replace(/\s+/g, " ").trim();
+}
+
+function getSectionLabel(element) {
+  const section = element?.closest("section, article, .support-card, .start-card, .product-card, .promo-content, .app-hero-content");
+  if (!section) return "";
+  const heading = section.querySelector("h1, h2, h3");
+  return getTextLabel(heading || section);
+}
+
+function getAppLabel(element) {
+  const sectionText = getSectionLabel(element).toLowerCase();
+  if (sectionText.includes("doublekick")) return "doublekick";
+  if (sectionText.includes("looper")) return "looper";
+  if (sectionText.includes("studio")) return "studio";
+  return "";
+}
+
+function getPlatformFromUrl(url) {
+  if (!url) return "";
+  if (url.includes("apps.apple.com")) return "ios";
+  if (url.includes("play.google.com")) return "android";
+  return "";
+}
+
+function getYouTubeId(url) {
+  const match = String(url || "").match(/embed\/([^?&]+)/);
+  return match ? match[1] : "";
+}
+
+function getVideoLabel(iframe) {
+  const slide = iframe.closest(".video-slide");
+  const section = iframe.closest("section");
+  const baseName = iframe.dataset.videoName || slide?.dataset.videoName || getTextLabel(section?.querySelector("h2")) || "video";
+  const index = slide ? Array.from(slide.parentElement.children).indexOf(slide) + 1 : "";
+  const slug = slugify(baseName);
+  if (slug === "stompai_in_the_wild" && index) return `${slug}_${index}`;
+  return slug || (index ? `video_${index}` : "video");
+}
+
+function trackQrLanding() {
+  const params = new URLSearchParams(window.location.search);
+  const utmSource = params.get("utm_source");
+  const utmMedium = params.get("utm_medium");
+  const utmCampaign = params.get("utm_campaign");
+  const qrCode = params.get("qr_code");
+
+  if (window.location.pathname.endsWith("/start.html") || utmSource === "qr" || qrCode) {
+    trackEvent("qr_land", {
+      utm_source: utmSource || "",
+      utm_medium: utmMedium || "",
+      utm_campaign: utmCampaign || "",
+      qr_code: qrCode || "",
+    });
+  }
+}
+
+function trackSectionViews() {
+  const sections = document.querySelectorAll("main section, body > section");
+  if (!sections.length || !("IntersectionObserver" in window)) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting || entry.intersectionRatio < 0.55) return;
+      const heading = entry.target.querySelector("h1, h2, h3");
+      const label = slugify(getTextLabel(heading) || entry.target.className || "section");
+      if (!label || trackedSectionKeys.has(label)) return;
+      trackedSectionKeys.add(label);
+      trackEvent("section_view", { section_name: label });
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: [0.55] });
+
+  sections.forEach((section) => observer.observe(section));
+}
+
+function trackFaqOpen(button) {
+  const item = button.parentElement;
+  if (!item.classList.contains("open")) {
+    trackEvent("faq_open", {
+      question: slugify(getTextLabel(button)),
+      section_name: "faq",
+    });
+  }
+}
+
+function ensureYouTubeApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (youtubeApiReady) return youtubeApiReady;
+
+  youtubeApiReady = new Promise((resolve) => {
+    const previousReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof previousReady === "function") previousReady();
+      resolve(window.YT);
+    };
+  });
+
+  if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(script);
+  }
+
+  return youtubeApiReady;
+}
+
+function prepareYouTubeIframe(iframe) {
+  const src = iframe.getAttribute("src");
+  const dataSrc = iframe.dataset.src;
+  const rawUrl = src || dataSrc;
+  if (!rawUrl || !rawUrl.includes("youtube.com/embed/")) return false;
+
+  const url = new URL(rawUrl, window.location.origin);
+  url.searchParams.set("enablejsapi", "1");
+  url.searchParams.set("playsinline", "1");
+  url.searchParams.set("origin", window.location.origin);
+
+  if (src) iframe.src = url.toString();
+  if (dataSrc) iframe.dataset.src = url.toString();
+  if (!iframe.id) iframe.id = `yt-${getYouTubeId(url.toString()) || Math.random().toString(36).slice(2, 9)}`;
+  return true;
+}
+
+function registerTrackedYouTubeFrame(iframe) {
+  if (!iframe || trackedVideoSetup.has(iframe) || !prepareYouTubeIframe(iframe)) return;
+  trackedVideoSetup.add(iframe);
+
+  ensureYouTubeApi().then((YT) => {
+    if (!YT?.Player || trackedVideoPlayers.has(iframe)) return;
+
+    const videoName = getVideoLabel(iframe);
+    const milestonesSent = new Set();
+    let progressTimer = null;
+    let started = false;
+
+    function clearProgressTimer() {
+      if (progressTimer) {
+        window.clearInterval(progressTimer);
+        progressTimer = null;
+      }
+    }
+
+    function startProgressTimer(player) {
+      clearProgressTimer();
+      progressTimer = window.setInterval(() => {
+        const duration = player.getDuration?.() || 0;
+        const currentTime = player.getCurrentTime?.() || 0;
+        if (!duration || !currentTime) return;
+        [25, 50, 75, 90].forEach((milestone) => {
+          if ((currentTime / duration) * 100 >= milestone && !milestonesSent.has(milestone)) {
+            milestonesSent.add(milestone);
+            trackEvent("video_progress", {
+              video_name: videoName,
+              video_id: getYouTubeId(iframe.src),
+              progress_percent: milestone,
+            });
+          }
+        });
+      }, 1500);
+    }
+
+    const player = new YT.Player(iframe.id, {
+      events: {
+        onStateChange: (event) => {
+          if (event.data === YT.PlayerState.PLAYING) {
+            if (!started) {
+              started = true;
+              trackEvent("video_play", {
+                video_name: videoName,
+                video_id: getYouTubeId(iframe.src),
+              });
+            }
+            startProgressTimer(event.target);
+          }
+
+          if (event.data === YT.PlayerState.PAUSED) {
+            trackEvent("video_pause", {
+              video_name: videoName,
+              video_id: getYouTubeId(iframe.src),
+            });
+            clearProgressTimer();
+          }
+
+          if (event.data === YT.PlayerState.ENDED) {
+            trackEvent("video_complete", {
+              video_name: videoName,
+              video_id: getYouTubeId(iframe.src),
+            });
+            clearProgressTimer();
+          }
+        },
+      },
+    });
+
+    trackedVideoPlayers.set(iframe, player);
+  }).catch(() => {});
+}
+
+function setupTrackedVideos() {
+  document.querySelectorAll('.video-section iframe[src*="youtube.com/embed/"], .video-section iframe[data-src*="youtube.com/embed/"]').forEach(registerTrackedYouTubeFrame);
+}
+
+function trackLinkAndButtonClicks() {
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("a, button");
+    if (!button) return;
+
+    if (button.matches(".faq-question")) {
+      trackFaqOpen(button);
+      return;
+    }
+
+    const href = button.getAttribute("href") || "";
+    const label = slugify(getTextLabel(button) || button.getAttribute("aria-label") || "button");
+    const sectionName = slugify(getSectionLabel(button));
+    const appName = getAppLabel(button);
+
+    if (button.matches(".carousel-dot")) {
+      const carousel = button.closest("[data-carousel]");
+      const slide = carousel?.querySelectorAll(".video-slide")[Number(button.dataset.index)];
+      const iframe = slide?.querySelector("iframe");
+      trackEvent("carousel_navigate", {
+        action: "dot",
+        video_name: iframe ? getVideoLabel(iframe) : "",
+      });
+      return;
+    }
+
+    if (button.closest(".carousel-controls")) {
+      const carousel = button.closest("[data-carousel]");
+      const activeSlide = carousel?.querySelector(".video-slide.active iframe");
+      trackEvent("carousel_navigate", {
+        action: button.hasAttribute("data-prev") ? "previous" : button.hasAttribute("data-next") ? "next" : "dot",
+        video_name: activeSlide ? getVideoLabel(activeSlide) : "",
+      });
+      return;
+    }
+
+    if (button.matches("[data-early-access-trigger]")) {
+      trackEvent("lead_modal_cta_click", {
+        section_name: sectionName,
+        app_name: "studio",
+      });
+      return;
+    }
+
+    if (button.closest(".footer-socials")) {
+      trackEvent("social_click", {
+        network: slugify(button.getAttribute("aria-label") || label),
+      });
+      return;
+    }
+
+    if (button.closest(".press-logo")) {
+      trackEvent("press_click", {
+        outlet: slugify(button.getAttribute("title") || button.querySelector("img")?.alt || ""),
+        link_url: href,
+      });
+      return;
+    }
+
+    if (href.includes("apps.apple.com") || href.includes("play.google.com")) {
+      trackEvent("download_click", {
+        app_name: appName,
+        platform: getPlatformFromUrl(href),
+        section_name: sectionName,
+      });
+      return;
+    }
+
+    if (href.includes("square.link")) {
+      trackEvent("purchase_intent", {
+        item_name: sectionName || label,
+        section_name: sectionName,
+      });
+      return;
+    }
+
+    if (href.includes("youtube.com")) {
+      trackEvent("social_click", {
+        network: "youtube",
+      });
+      return;
+    }
+
+    if (button.closest(".nav-links")) {
+      trackEvent("nav_click", {
+        destination: href,
+        link_name: label,
+      });
+      return;
+    }
+
+    if (button.classList.contains("btn")) {
+      trackEvent("cta_click", {
+        link_name: label,
+        destination: href,
+        section_name: sectionName,
+        app_name: appName,
+      });
+    }
+  });
+}
+
+function setupProductGalleries() {
+  document.querySelectorAll("[data-product-gallery]").forEach((gallery) => {
+    const mainImage = gallery.querySelector("[data-product-main]");
+    const thumbs = gallery.querySelectorAll("[data-product-thumb]");
+    if (!mainImage || !thumbs.length) return;
+
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener("click", () => {
+        mainImage.src = thumb.dataset.imageSrc || mainImage.src;
+        mainImage.alt = thumb.dataset.imageAlt || mainImage.alt;
+
+        thumbs.forEach((node) => node.setAttribute("aria-pressed", "false"));
+        thumb.setAttribute("aria-pressed", "true");
+      });
+    });
+  });
+}
+
+trackQrLanding();
+trackSectionViews();
+trackLinkAndButtonClicks();
+setupTrackedVideos();
+setupProductGalleries();
+
 const navToggle = document.querySelector('.nav-toggle');
 const navLinks = document.querySelector('.nav-links');
 
@@ -70,6 +424,7 @@ document.querySelectorAll('[data-carousel]').forEach(carousel => {
     const nextIframe = slides[current].querySelector('iframe');
     if (nextIframe && slides[current].dataset.videoUrl) {
       nextIframe.src = slides[current].dataset.videoUrl;
+      registerTrackedYouTubeFrame(nextIframe);
     }
 
     slides[current].classList.add('active');

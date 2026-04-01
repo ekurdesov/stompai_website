@@ -3,7 +3,7 @@ import {
   collection,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-import { db } from "./firebase-client.js";
+import { db, logAnalyticsEvent } from "./firebase-client.js";
 
 const modal = document.querySelector("[data-signup-modal]");
 const triggers = document.querySelectorAll("[data-early-access-trigger]");
@@ -18,6 +18,10 @@ if (modal && triggers.length > 0 && form && status && emailInput) {
   function openModal() {
     modal.hidden = false;
     document.body.style.overflow = "hidden";
+    logAnalyticsEvent("lead_modal_open", {
+      modal_name: "studio_early_access",
+      page: "studio",
+    });
     window.setTimeout(() => emailInput.focus(), 0);
   }
 
@@ -64,11 +68,19 @@ if (modal && triggers.length > 0 && form && status && emailInput) {
         partner: 0,
       });
 
+      logAnalyticsEvent("generate_lead", {
+        form_name: "studio_early_access",
+        page: "studio",
+      });
       status.textContent = "You are on the list. We will be in touch.";
       status.className = "signup-status success";
       submitButton.textContent = "Submitted";
       window.setTimeout(closeModal, 1400);
     } catch (error) {
+      logAnalyticsEvent("lead_submit_error", {
+        form_name: "studio_early_access",
+        page: "studio",
+      });
       status.textContent = "Signup failed. Check Firebase rules and try again.";
       status.className = "signup-status error";
       submitButton.disabled = false;

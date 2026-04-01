@@ -1,5 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAnalytics, isSupported as analyticsSupported } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+import {
+  getAnalytics,
+  isSupported as analyticsSupported,
+  logEvent,
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,9 +18,43 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+let analytics = null;
+const queuedEvents = [];
+
+function normalizeValue(value) {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value === "string") return value.slice(0, 100);
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  return String(value).slice(0, 100);
+}
+
+function logAnalyticsEvent(name, params = {}) {
+  const normalizedParams = Object.fromEntries(
+    Object.entries(params)
+      .map(([key, value]) => [key, normalizeValue(value)])
+      .filter(([, value]) => value !== undefined),
+  );
+
+  if (analytics) {
+    logEvent(analytics, name, normalizedParams);
+    return;
+  }
+
+  queuedEvents.push({ name, params: normalizedParams });
+}
 
 analyticsSupported().then((supported) => {
-  if (supported) getAnalytics(app);
+  if (!supported) return;
+
+  analytics = getAnalytics(app);
+  while (queuedEvents.length) {
+    const event = queuedEvents.shift();
+    logEvent(analytics, event.name, event.params);
+  }
 }).catch(() => {});
 
-export { app, db };
+window.stompaiAnalytics = {
+  logEvent: logAnalyticsEvent,
+};
+
+export { app, db, logAnalyticsEvent };
