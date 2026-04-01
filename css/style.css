@@ -1553,6 +1553,7 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   }
   .app-hero-content { order: 1; }
   .app-hero-visual { order: 0; margin-bottom: 20px; }
+  .doublekick-hero-video .app-hero-visual { display: none; }
 
   .footer-grid {
     grid-template-columns: 1fr 1fr;
@@ -1646,7 +1647,7 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
     transform: translate(-50%, -53%);
   }
   .doublekick-hero-video .video-bg iframe {
-    transform: translate(-50%, -57%);
+    transform: translate(-50%, -55%);
   }
 
   .countdown-grid {
@@ -1672,7 +1673,7 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
     transform: translate(-50%, -55%);
   }
   .doublekick-hero-video .video-bg iframe {
-    transform: translate(-50%, -60%);
+    transform: translate(-50%, -58%);
   }
   .hero-buttons { flex-direction: column; align-items: center; }
   .cta-buttons { flex-direction: column; align-items: center; }
