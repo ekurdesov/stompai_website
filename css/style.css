@@ -1243,6 +1243,14 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   z-index: 1;
 }
 
+.section-surface-no-top {
+  border-top: none;
+}
+
+.section-surface-no-bottom {
+  border-bottom: none;
+}
+
 .section-bleed {
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
@@ -1450,7 +1458,7 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
 /* --- Start Page --- */
 .start-page {
   min-height: 100vh;
-  padding: 120px 0 80px;
+  padding: 120px 0 0;
   background:
     radial-gradient(circle at top, rgba(147, 0, 255, 0.18), transparent 36%),
     linear-gradient(180deg, #171726 0%, #11111a 100%);
