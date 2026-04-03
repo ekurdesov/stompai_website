@@ -411,7 +411,8 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
 .product-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  display: block;
 }
 
 .product-gallery {
@@ -426,13 +427,18 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
 }
 
 .product-thumbs {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
   gap: 10px;
-  padding: 0 16px;
+  padding: 5px 16px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .product-thumb {
+  flex: 0 0 88px;
   border: 1px solid rgba(20, 20, 32, 0.12);
   border-radius: 10px;
   overflow: hidden;
@@ -440,6 +446,7 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
   cursor: pointer;
   padding: 0;
   transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  scroll-snap-align: start;
 }
 
 .product-thumb:hover,
@@ -452,7 +459,7 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
 .product-thumb img {
   width: 100%;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 

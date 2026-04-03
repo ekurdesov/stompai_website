@@ -342,6 +342,7 @@ function setupProductGalleries() {
 
         thumbs.forEach((node) => node.setAttribute("aria-pressed", "false"));
         thumb.setAttribute("aria-pressed", "true");
+        thumb.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
       });
     });
   });
